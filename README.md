@@ -17,4 +17,4 @@
 ## Spuštění aplikace 
 - `npm install sqlite3` - instalace sqlite3
 - `npm install` - instalace závislostí
-- `npm start` - spuštění aplikace
+- `npm start` - spuštění aplikace 
