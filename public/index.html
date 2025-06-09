@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa konferencí</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Systém správy konferencí</h1>
+            <p>Jednoduchý nástroj pro správu konferencí, mluvčích a účastníků</p>
+
+        </header>
+        
+        <div class="main-content">
+
+            <div class="sidebar">
+
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="conferences">Konference</div>
+                    <div class="nav-tab" data-tab="speakers">Přednášející</div>
+                    <div class="nav-tab" data-tab="attendees">Účastníci</div>
+
+                </div>
+            </div>
+
+
+
+            <div class="content-area">
+                <div id="conferences" class="tab-content active">
+                    <div class="section">
+
+
+                        <h2>Přidat novou konferenci</h2>
+                        <form id="conference-form">
+                            <div>
+
+                                <label for="conf-name">Název konference:</label>
+                                <input type="text" id="conf-name" name="name" placeholder="Zadejte název konference" required>
+                            </div>
+                            <div>
+
+                                <label for="conf-date">Datum:</label>
+                                <input type="date" id="conf-date" name="date" required>
+
+                            </div>
+                            <div>
+                                <button type="submit">Přidat konferenci</button>
+                            </div>
+                        </form>
+                    </div>
+
+
+                    <div class="section">
+                        <h2>Seznam konferencí</h2>
+                        <table id="conferences-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Název</th>
+                                    <th>Datum</th>
+                                    <th>Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="speakers" class="tab-content">
+                    <div class="section">
+                        <h2>Přidat nového přednášejícího</h2>
+                        <form id="speaker-form">
+                            <div>
+                                <label for="speaker-firstname">Jméno:</label>
+                                <input type="text" id="speaker-firstname" name="firstname" placeholder="Zadejte jméno" required>
+                            </div>
+                            <div>
+                                <label for="speaker-lastname">Příjmení:</label>
+                                <input type="text" id="speaker-lastname" name="lastname" placeholder="Zadejte příjmení" required>
+                            </div>
+                            <div>
+                                <button type="submit">Přidat přednášejícího</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="section">
+                        <h2>Seznam přednášejících</h2>
+                        <table id="speakers-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Jméno</th>
+                                    <th>Příjmení</th>
+                                    <th>Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="attendees" class="tab-content">
+                    <div class="section">
+                        <h2>Přidat nového účastníka</h2>
+                        <form id="attendee-form">
+                            <div>
+                                <label for="attendee-name">Jméno účastníka:</label>
+                                <input type="text" id="attendee-name" name="attendee_name" placeholder="Zadejte jméno účastníka" required>
+                            </div>
+                            <div>
+                                <label for="attendee-conference">Konference:</label>
+                                <select id="attendee-conference" name="conference_id" required>
+                                    <option value="" disabled selected>Vyberte konferenci</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit">Přidat účastníka</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="section">
+                        <h2>Seznam účastníků</h2>
+                        <table id="attendees-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Jméno účastníka</th>
+                                    <th>Konference</th>
+                                    <th>Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 Systém správy konferencí. Všechna práva vyhrazena.</p>
+        <p>Vytvořil: <strong>Adam Zabilanský</strong></p>
+        <p>Verze: 1.0.0</p>
+    </footer>
+
+    <div id="notification-container"></div>
+
+    <script>
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('cs-CZ');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            fetchConferences();
+            fetchSpeakers();
+            fetchAttendees();
+            
+            document.getElementById('conference-form').addEventListener('submit', addConference);
+            document.getElementById('speaker-form').addEventListener('submit', addSpeaker);
+            document.getElementById('attendee-form').addEventListener('submit', addAttendee);
+        });
+
+        function showNotification(message, isError = false) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.textContent = message;
+            
+            document.getElementById('notification-container').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        async function fetchConferences() {
+            try {
+                const response = await fetch('/api/conferences');
+                const conferences = await response.json();
+                
+                const tableBody = document.querySelector('#conferences-table tbody');
+                tableBody.innerHTML = '';
+                
+                conferences.forEach(conference => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${conference.id}</td>
+                        <td>${conference.name}</td>
+                        <td>${formatDate(conference.date)}</td>
+                        <td>
+                            <button class="edit" onclick="editConference(${conference.id}, '${conference.name}', '${conference.date}')">
+                                Upravit
+                            </button>
+                            <button class="delete" onclick="deleteConference(${conference.id})">
+                                Smazat
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                const select = document.getElementById('attendee-conference');
+                select.innerHTML = '<option value="" disabled selected>Vyberte konferenci</option>';
+                conferences.forEach(conference => {
+                    const option = document.createElement('option');
+                    option.value = conference.id;
+                    option.textContent = conference.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Chyba při načítání konferencí:', error);
+                showNotification('Nepodařilo se načíst konference', true);
+            }
+        }
+
+        async function addConference(e) {
+            e.preventDefault();
+            const name = document.getElementById('conf-name').value;
+            const date = document.getElementById('conf-date').value;
+            
+            try {
+                const response = await fetch('/api/conferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, date })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('conference-form').reset();
+                    fetchConferences();
+                    showNotification('Konference byla úspěšně přidána');
+                } else {
+                    showNotification('Chyba při přidávání konference', true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při přidávání konference', true);
+            }
+        }
+
+        async function editConference(id, name, date) {
+            const newName = prompt('Název konference:', name);
+            if (!newName) return;
+            
+            const newDate = prompt('Datum konference (YYYY-MM-DD):', date);
+            if (!newDate) return;
+            
+            try {
+                const response = await fetch(`/api/conferences/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName, date: newDate })
+                });
+                
+                if (response.ok) {
+                    fetchConferences();
+                    showNotification('Konference byla úspěšně upravena');
+                } else {
+                    showNotification('Chyba při upravování konference', true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při upravování konference', true);
+            }
+        }
+
+        async function deleteConference(id) {
+            if (confirm('Opravdu chcete smazat tuto konferenci?')) {
+                try {
+                    const response = await fetch(`/api/conferences/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        fetchConferences();
+                        showNotification('Konference byla úspěšně smazána');
+                    } else {
+                        showNotification('Chyba při mazání konference', true);
+                    }
+                } catch (error) {
+                    console.error('Chyba:', error);
+                    showNotification('Chyba při mazání konference', true);
+                }
+            }
+        }
+
+        async function fetchSpeakers() {
+            try {
+                const response = await fetch('/api/speakers');
+                const speakers = await response.json();
+                
+                const tableBody = document.querySelector('#speakers-table tbody');
+                tableBody.innerHTML = '';
+                
+                speakers.forEach(speaker => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${speaker.id}</td>
+                        <td>${speaker.firstname}</td>
+                        <td>${speaker.lastname}</td>
+                        <td>
+                            <button class="edit" onclick="editSpeaker(${speaker.id}, '${speaker.firstname}', '${speaker.lastname}')">Upravit</button>
+                            <button class="delete" onclick="deleteSpeaker(${speaker.id})">Smazat</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Chyba při načítání přednášejících:', error);
+                showNotification('Nepodařilo se načíst přednášející', true);
+            }
+        }
+
+        async function addSpeaker(e) {
+            e.preventDefault();
+            const firstname = document.getElementById('speaker-firstname').value;
+            const lastname = document.getElementById('speaker-lastname').value;
+            
+            try {
+                const response = await fetch('/api/speakers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstname, lastname })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('speaker-form').reset();
+                    fetchSpeakers();
+                    showNotification('Přednášející byl úspěšně přidán');
+                } else {
+                    showNotification('Chyba při přidávání přednášejícího', true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při přidávání přednášejícího', true);
+            }
+        }
+
+        async function editSpeaker(id, firstname, lastname) {
+            const newFirstname = prompt('Jméno přednášejícího:', firstname);
+            if (!newFirstname) return;
+            
+            const newLastname = prompt('Příjmení přednášejícího:', lastname);
+            if (!newLastname) return;
+            
+            try {
+                const response = await fetch(`/api/speakers/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstname: newFirstname, lastname: newLastname })
+                });
+                
+                if (response.ok) {
+                    fetchSpeakers();
+                    showNotification('Přednášející byl úspěšně upraven');
+                } else {
+                    showNotification('Chyba při upravování přednášejícího', true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při upravování přednášejícího', true);
+            }
+        }
+
+        async function deleteSpeaker(id) {
+            if (confirm('Opravdu chcete smazat tohoto přednášejícího?')) {
+                try {
+                    const response = await fetch(`/api/speakers/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        fetchSpeakers();
+                        showNotification('Přednášející byl úspěšně smazán');
+                    } else {
+                        showNotification('Chyba při mazání přednášejícího', true);
+                    }
+                } catch (error) {
+                    console.error('Chyba:', error);
+                    showNotification('Chyba při mazání přednášejícího', true);
+                }
+            }
+        }
+
+        async function fetchAttendees() {
+            try {
+                const response = await fetch('/api/attendees');
+                const attendees = await response.json();
+                
+                const tableBody = document.querySelector('#attendees-table tbody');
+                tableBody.innerHTML = '';
+                
+                attendees.forEach(attendee => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${attendee.id}</td>
+                        <td>${attendee.attendee_name}</td>
+                        <td>${attendee.conference_name}</td>
+                        <td>
+                            <button class="edit" onclick="editAttendee(${attendee.id}, '${attendee.attendee_name}', ${attendee.conference_id})">Upravit</button>
+                            <button class="delete" onclick="deleteAttendee(${attendee.id})">Smazat</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Chyba při načítání účastníků:', error);
+                showNotification('Nepodařilo se načíst účastníky', true);
+            }
+        }
+
+        async function addAttendee(e) {
+            e.preventDefault();
+            const attendee_name = document.getElementById('attendee-name').value;
+            const conference_id = document.getElementById('attendee-conference').value;
+            
+            try {
+                const response = await fetch('/api/attendees', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attendee_name, conference_id })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('attendee-form').reset();
+                    fetchAttendees();
+                    showNotification('Účastník byl úspěšně přidán');
+                } else {
+                    const errorData = await response.json();
+                    showNotification(`Chyba při přidávání účastníka: ${errorData.error || 'Neznámá chyba'}`, true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při přidávání účastníka', true);
+            }
+        }
+
+        async function editAttendee(id, name, conferenceId) {
+            const newName = prompt('Jméno účastníka:', name);
+            if (!newName) return;
+            
+            const newConferenceId = prompt('ID konference:', conferenceId);
+            if (!newConferenceId) return;
+            
+            try {
+                const response = await fetch(`/api/attendees/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attendee_name: newName, conference_id: newConferenceId })
+                });
+                
+                if (response.ok) {
+                    fetchAttendees();
+                    showNotification('Účastník byl úspěšně upraven');
+                } else {
+                    showNotification('Chyba při upravování účastníka', true);
+                }
+            } catch (error) {
+                console.error('Chyba:', error);
+                showNotification('Chyba při upravování účastníka', true);
+            }
+        }
+
+        async function deleteAttendee(id) {
+            if (confirm('Opravdu chcete smazat tohoto účastníka?')) {
+                try {
+                    const response = await fetch(`/api/attendees/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        fetchAttendees();
+                        showNotification('Účastník byl úspěšně smazán');
+                    } else {
+                        showNotification('Chyba při mazání účastníka', true);
+                    }
+                } catch (error) {
+                    console.error('Chyba:', error);
+                    showNotification('Chyba při mazání účastníka', true);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
