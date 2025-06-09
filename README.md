@@ -15,6 +15,7 @@
 ---
 
 ## Spuštění aplikace
-- `npm install sqlite3` - instalace sqlite3
 - `npm install` - instalace závislostí
+- `npm install sqlite3` - instalace sqlite3
+- `npm install express` - instalace express
 - `npm start` - spuštění aplikace
