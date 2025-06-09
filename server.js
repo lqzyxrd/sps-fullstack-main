@@ -8,7 +8,7 @@ const db = new sqlite3.Database('./database/database.sqlite', (err) => {
   if (err) {
     console.error('Chyba při připojení k databázi:', err.message);
   } else {
-    console.log('Připojeno k SQLite databázi');
+    console.log('Připojeno k SQLite databázi'); 
     initDatabase(); 
   }
 });
